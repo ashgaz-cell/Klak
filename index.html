@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة كلك جيمز</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0;
+        }
+        canvas { 
+            border: 2px solid #fff; 
+            border-radius: 10px; 
+            background: #87CEEB; 
+            max-width: 100%;
+        }
+        #score { 
+            font-size: 24px; 
+            color: white; 
+            margin: 10px; 
+        }
+        button { 
+            padding: 10px 20px; 
+            font-size: 18px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        #start { background: #4CAF50; color: white; }
+        #jumpBtn { background: #2196F3; color: white; }
+    </style>
+</head>
+<body>
+    <h1>لعبة كلك جيمز</h1>
+    <p>اضغط زر القفز أو زر المسافة للقفز وتجنب العوائق!</p>
+    <div id="score">النقاط: 0</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <br>
+    <button id="start">ابدأ اللعبة</button>
+    <button id="jumpBtn">قفز</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const startBtn = document.getElementById('start');
+        const jumpBtn = document.getElementById('jumpBtn');
+        
+        let player = { x: 50, y: 300, width: 50, height: 50, vy: 0 };
+        let obstacles = [];
+        let score = 0;
+        let gameRunning = false;
+        let gravity = 0.5;
+        let jump = -12;
+        let obstacleSpeed = 3;
+        
+        function resizeCanvas() {
+            const scale = Math.min(window.innerWidth / 900, 1);
+            canvas.style.width = (800 * scale) + 'px';
+            canvas.style.height = (400 * scale) + 'px';
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawPlayer() {
+            ctx.fillStyle = '#FF5722';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+        
+        function drawObstacles() {
+            ctx.fillStyle = '#4CAF50';
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            player.vy += gravity;
+            player.y += player.vy;
+            
+            if (player.y + player.height > canvas.height - 50) {
+                player.y = canvas.height - 50 - player.height;
+                player.vy = 0;
+            }
+            
+            obstacles.forEach((obs, index) => {
+                obs.x -= obstacleSpeed;
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(index, 1);
+                    score += 10;
+                }
+            });
+            
+            scoreElement.textContent = 'النقاط: ' + score;
+            
+            if (Math.random() < 0.02) {
+                obstacles.push({ 
+                    x: canvas.width, 
+                    y: canvas.height - 50 - 30, 
+                    width: 30, 
+                    height: 30 
+                });
+            }
+            
+            obstacles.forEach(obs => {
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    alert('انتهت اللعبة! نقاطك: ' + score);
+                    gameRunning = false;
+                    obstacles = [];
+                    score = 0;
+                }
+            });
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            drawPlayer();
+            drawObstacles();
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            obstacles = [];
+        }
+        
+        function jumpPlayer() {
+            if (player.y + player.height >= canvas.height - 50) {
+                player.vy = jump;
+            }
+        }
+
+        // ربط الأزرار بالأحداث (يشتغل على الآيفون)
+        startBtn.addEventListener('click', startGame);
+        startBtn.addEventListener('touchstart', function(e){
+            e.preventDefault();
+            startGame();
+        });
+
+        jumpBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            jumpPlayer();
+        });
+        jumpBtn.addEventListener('touchstart', function(e){
+            e.preventDefault();
+            jumpPlayer();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jumpPlayer();
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jumpPlayer();
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
